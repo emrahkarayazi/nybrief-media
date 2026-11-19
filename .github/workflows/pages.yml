@@ -2,9 +2,9 @@ name: publish-pages
 # Builds a static site from the newest daily release assets (videos) and deploys it to GitHub Pages.
 # Videos live in releases (no repo bloat); Pages serves them as direct video/mp4 URLs:
 #   https://emrahkarayazi.github.io/nybrief-media/v/<file>.mp4
+# Triggered by daily_run.py (gh workflow run publish-pages) after each upload; runs on main so the
+# github-pages environment protection allows the deploy (release/tag-triggered runs are rejected).
 on:
-  release:
-    types: [published]
   workflow_dispatch:
 permissions:
   contents: read
