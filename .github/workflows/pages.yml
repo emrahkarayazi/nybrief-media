@@ -1,0 +1,39 @@
+name: publish-pages
+# Builds a static site from the newest daily release assets (videos) and deploys it to GitHub Pages.
+# Videos live in releases (no repo bloat); Pages serves them as direct video/mp4 URLs:
+#   https://emrahkarayazi.github.io/nybrief-media/v/<file>.mp4
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Collect the newest release videos
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p site/v
+          echo '<!doctype html><title>NY Brief media</title><p>NY Brief daily video files.</p>' > site/index.html
+          touch site/.nojekyll
+          for tag in $(gh release list -R "$GITHUB_REPOSITORY" --limit 21 --json tagName -q '.[].tagName'); do
+            gh release download "$tag" -R "$GITHUB_REPOSITORY" -p '*.mp4' -p '*.jpg' -D site/v --skip-existing || true
+          done
+          ls -la site/v
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
